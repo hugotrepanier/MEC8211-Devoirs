@@ -78,15 +78,24 @@ for N in range(5,10) :
 
 
     # Erreur totale commise
+    #L1_1.append(np.trapz(C_results_1 - C_exact, r))
+    #L1_2.append(np.trapz(C_results_2 - C_exact, r))
 
-    L1_1.append(np.trapz(C_results_1 - C_exact, r))
-    L1_2.append(np.trapz(C_results_2 - C_exact, r))
+    #L2_1.append(np.sqrt(np.trapz((C_results_1 - C_exact)**2, r)))
+    #L2_2.append(np.sqrt(np.trapz((C_results_2 - C_exact)**2, r)))
 
-    L2_1.append(np.sqrt(np.trapz((C_results_1 - C_exact)**2, r)))
-    L2_2.append(np.sqrt(np.trapz((C_results_2 - C_exact)**2, r)))
+    #Linf_1.append((abs(C_results_1[0]-C_exact[0])))
+    #Linf_2.append((abs(C_results_1[0]-C_exact[0])))
 
-    Linf_1.append((abs(C_results_1[0]-C_exact[0])))
-    Linf_2.append((abs(C_results_1[0]-C_exact[0])))
+    # Erreur totale commise
+    L1_1.append((1/N)*np.sum(np.abs(C_results_1 - C_exact)))
+    L1_2.append((1/N)*np.sum(np.abs(C_results_2 - C_exact)))
+
+    L2_1.append(np.sqrt((1/N)*np.sum(np.abs(C_results_1 - C_exact)**2)))
+    L2_2.append(np.sqrt((1/N)*np.sum(np.abs(C_results_2 - C_exact)**2)))
+
+    Linf_1.append(np.max(abs(C_results_1-C_exact)))
+    Linf_2.append(np.max(abs(C_results_1-C_exact)))
    
 
 print(vect_N)
