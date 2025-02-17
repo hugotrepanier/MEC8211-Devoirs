@@ -12,8 +12,6 @@ def make_A_matrix_order1(N, R):
     "Génération de la matrice A"
     dr = R/(N-1)
     A = np.zeros((N, N))
-    #A[0,0] = -1/dr
-    #A[0,1] = 1/dr
     A[0,0:2] = [-1/dr, 1/dr]
     
     for i in range(1, N-1):
@@ -46,7 +44,7 @@ def make_b_vector(N, S, D_eff, C_e):
     
     return b
 
-# Constantes
+# Constantes du contexte du problème et discrétisation en N noeuds
 R = 0.5
 N_start = 5
 N_end = 10
@@ -54,6 +52,7 @@ N_end = 10
 S = 2*10**(-8)
 C_e = 20
 D_eff = 10**(-10)
+# Objets contenant les noeuds et les erreurs L1, L2 et Linfini
 vect_N= []
 L1_1 = []
 L1_2 = []
@@ -62,6 +61,7 @@ L2_2 = []
 Linf_1 = []
 Linf_2 = []
 
+# Résolution du système d'équations 
 for N in range(N_start, N_end) :
     vect_N.append(R/(N-1))
 
@@ -73,22 +73,12 @@ for N in range(N_start, N_end) :
     C_results_1 = np.linalg.solve(A_matrix_1, b_vector)
     C_results_2 = np.linalg.solve(A_matrix_2, b_vector)
 
-    # Solution analytique
+    # Solution analytique parabolique
     r = np.linspace(0, R, N)
     C_exact = (1/4)*(S/D_eff)*(R**2)*((r**2)/(R**2) - 1) + C_e
 
 
-    # Erreur totale commise
-    #L1_1.append(np.trapz(C_results_1 - C_exact, r))
-    #L1_2.append(np.trapz(C_results_2 - C_exact, r))
-
-    #L2_1.append(np.sqrt(np.trapz((C_results_1 - C_exact)**2, r)))
-    #L2_2.append(np.sqrt(np.trapz((C_results_2 - C_exact)**2, r)))
-
-    #Linf_1.append((abs(C_results_1[0]-C_exact[0])))
-    #Linf_2.append((abs(C_results_1[0]-C_exact[0])))
-
-    # Erreur totale commise
+    # Calcul des erreurs L1, L2 et Linfini
     L1_1.append((1/N)*np.sum(np.abs(C_results_1 - C_exact)))
     L1_2.append((1/N)*np.sum(np.abs(C_results_2 - C_exact)))
 
@@ -99,9 +89,7 @@ for N in range(N_start, N_end) :
     Linf_2.append(np.max(abs(C_results_2-C_exact)))
    
 
-print(vect_N)
-
-# Affichage des résultats
+# Affichage des profils de concentration et des erreurs
 plt.figure
 plt.plot(r, C_exact, label="Exacte")
 plt.plot(r, C_results_1, label="Numérique ordre 1")
@@ -140,13 +128,16 @@ plt.xlabel("Pas de différentiation (m)")
 plt.legend()
 plt.show()
 
+
+# AFFICHAGE DES GRAPHIQUES DE CONVERGENCE DE L'ERREUR EN LOG-LOG :
 # Calcul de la convergence du système en prenant N et 2N
 p_hat = (np.log(L1_1[0]/L1_1[4])/np.log(2))
 print("Convergence L1_1 : ", np.log(L1_1[0]/L1_1[4])/np.log(2))
 
 print("Convergence L1_2 : ", np.log(L1_2[0]/L1_2[4])/np.log(2))
 
-# ----- Graphiques de convergences L_1_1
+# Erreur L1 de la résolution numérique avec schéma d'ordre 1 : ########################################################################################################################################
+
 coefficients = np.polyfit(np.log(vect_N), np.log(L1_1), 1)
 exponent = coefficients[0]
 
@@ -163,7 +154,6 @@ extrapolated_value = fit_function(vect_N[-1])
 plt.figure(figsize=(8, 6))
 plt.scatter(vect_N, L1_1, marker='o', color='b', label='Données numériques obtenues')
 plt.loglog(vect_N, fit_function(vect_N), linestyle='--', color='r', label='Régression en loi de puissance')
-
 
 # Marquer la valeur extrapolée
 #plt.scatter(h_values[-1], extrapolated_value, marker='x', color='g', label='Extrapolation')
@@ -186,7 +176,8 @@ equation_text_obj.set_position((0.5, 0.4))
 plt.show()
 
 
-# ----- Graphiques de convergences L_2_1
+# Erreur L2 de la résolution numérique avec schéma d'ordre 1 : ########################################################################################################################################
+
 coefficients = np.polyfit(np.log(vect_N), np.log(L2_1), 1)
 exponent = coefficients[0]
 
@@ -224,7 +215,8 @@ equation_text_obj.set_position((0.5, 0.4))
 #plt.grid(True)
 plt.show()
 
-# ----- Graphiques de convergences Linf_1
+# Erreur Linfini de la résolution numérique avec schéma d'ordre 1 : ########################################################################################################################################
+
 coefficients = np.polyfit(np.log(vect_N), np.log(Linf_1), 1)
 exponent = coefficients[0]
 
@@ -263,7 +255,8 @@ equation_text_obj.set_position((0.5, 0.4))
 plt.show()
 
 
-# ----- Graphiques de convergences L_1_2
+# Erreur L1 de la résolution numérique avec schéma d'ordre 2 : ########################################################################################################################################
+
 coefficients = np.polyfit(np.log(vect_N), np.log(L1_2), 1)
 exponent = coefficients[0]
 
@@ -302,7 +295,8 @@ equation_text_obj.set_position((0.5, 0.4))
 plt.show()
 
 
-# ----- Graphiques de convergences L_2_2
+# Erreur L2 de la résolution numérique avec schéma d'ordre 2 : ########################################################################################################################################
+
 coefficients = np.polyfit(np.log(vect_N), np.log(L2_2), 1)
 exponent = coefficients[0]
 
@@ -340,7 +334,8 @@ equation_text_obj.set_position((0.5, 0.4))
 #plt.grid(True)
 plt.show()
 
-# ----- Graphiques de convergences Linf_2
+# Erreur Linfini de la résolution numérique avec schéma d'ordre 2 : ########################################################################################################################################
+
 coefficients = np.polyfit(np.log(vect_N), np.log(Linf_2), 1)
 exponent = coefficients[0]
 
