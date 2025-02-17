@@ -96,7 +96,7 @@ for N in range(N_start, N_end) :
     L2_2.append(np.sqrt((1/N)*np.sum(np.abs(C_results_2 - C_exact)**2)))
 
     Linf_1.append(np.max(abs(C_results_1-C_exact)))
-    Linf_2.append(np.max(abs(C_results_1-C_exact)))
+    Linf_2.append(np.max(abs(C_results_2-C_exact)))
    
 
 print(vect_N)
