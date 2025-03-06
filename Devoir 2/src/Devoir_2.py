@@ -27,7 +27,7 @@ existe, donc, le profil parabolique ne deviendra probablement pas complètement 
 # Importation des librairies pertinentes
 import numpy as np
 import matplotlib.pyplot as plt
-
+print("Hi")
 """
 Fontions utilisées dans la résolution de l'équation différentielle
 """
