@@ -27,26 +27,119 @@ existe, donc, le profil parabolique ne deviendra probablement pas complètement 
 # Importation des librairies pertinentes
 import numpy as np
 import matplotlib.pyplot as plt
-print("Hi")
+import matplotlib.cm as cm
+import re
+
 """
 Fontions utilisées dans la résolution de l'équation différentielle
 """
 # Création de la matrice de discrétisation spatiale de l'e.d.p.
-def make_A_matrix_order2(N, R):
+def make_A_matrix_order2(N, R, dt, k, Deff):
     "Génération de la matrice A"
     dr = R/(N-1)
     A = np.zeros((N, N))
-    A[0,0:3] = [-3/(2*dr), 4/(2*dr), -1/(2*dr)]
+    A[0, 0] = 1        # Condition de Dirichlett à la frontière
+    A[N-1,N-3:N] = [1, -4, 3]
 
     for i in range(1, N-1):
         r = dr*i
-        A[i, i-1:i+2] = [(-1/(2*r*dr) + 1/(dr**2)), -2/(dr**2), 1/(2*r*dr) + 1/(dr**2)]
-
-    A[N-1, N-1] = 1
-
+        A[i, i-1:i+2] = [((dt*Deff)/(2*r*dr) - (dt*Deff)/(dr**2)),
+                         (1 + dt*k + (2*dt*Deff)/(dr**2)),
+                         ((-dt*Deff)/(2*r*dr) - (dt*Deff)/(dr**2))]
     return A
 
+def make_b_vector(N, Deff, Ce):
+    "G�n�ration de la matrice b"
+    b = np.zeros(N)
+    b[0] = Ce
+    
+    return b
 
+
+
+
+start_delimiter = "START"
+end_delimiter = "END"
+
+data_dict = {}
+
+with open("../data/Input_data.txt", "r") as file:
+    capture = False
+
+    for line in file:
+        line = line.strip()
+        if line == start_delimiter:
+            capture = True
+            continue  # Skip the delimiter line itself
+        elif line == end_delimiter:
+            break  # Stop reading when reaching END
+
+        if capture:
+            # Match variable assignments (e.g., "k = 4*10**(-9)")
+            match = re.match(r"(\w+)\s*=\s*([\d\*\(\)\-\+\./eE]+)", line)
+            if match:
+                key, value = match.groups()
+                # Evaluate the expression safely
+                try:
+                    data_dict[key] = eval(value)
+                except Exception as e:
+                    print(f"Error parsing {key}: {value} -> {e}")
+
+# Convert to matrix (list of lists for numerical data only)
+matrix = [[data_dict.get("k", 0), data_dict.get("Deff", 0), 
+           data_dict.get("Ce", 0), data_dict.get("N", 0), 
+           data_dict.get("Ntemps", 0)]]
+
+# Param�tres spatiaux      
+N = data_dict.get("N")
+R = data_dict.get("R")
+Ce = data_dict.get("Ce")
+r = np.linspace(0, R, N)
+
+
+# Param�tres temporels
+Ntemps = data_dict.get("Ntemps")
+start = data_dict.get("temps_start")
+stop = data_dict.get("temps_stop")
+
+
+# Param�tres physiques
+k = data_dict.get("k")
+Deff = data_dict.get("Deff")
+time_vector = np.linspace(start, stop, Ntemps)
+dt = (stop-start)/Ntemps
+
+results_matrix = []
+
+A = make_A_matrix_order2(N, R, dt, k, Deff)
+b = make_b_vector(N, Deff, Ce)
+results_matrix.append(b)
+
+for t in time_vector :
+    b[N-1] = 0
+    C_t_pdt = np.linalg.solve(A, b)
+    b = C_t_pdt
+    results_matrix.append(b)
+
+# Define colormap and normalization
+cmap = cm.viridis  
+norm = plt.Normalize(vmin=0, vmax=Ntemps-1)
+
+plt.figure(figsize=(8, 5))
+for i in range(Ntemps):
+    plt.plot(r, results_matrix[i][::-1], color=cmap(norm(i)), alpha=0.8)  # Gradient color
+
+plt.title("Concentration dans le pilier en fonction de la position et du temps", fontweight='bold')
+plt.ylabel("Concentration (mol/m^3)")
+plt.xlabel("Position (m)")
+
+# Ensure colorbar is correctly linked
+sm = cm.ScalarMappable(cmap=cmap, norm=norm)
+sm.set_array([])  
+cbar = plt.colorbar(sm, ax=plt.gca())  # Explicitly associate with the current Axes
+cbar.set_label("Time step (t)")
+
+plt.show()
 
 
 # Objets contenant les noeuds et les erreurs L1, L2 et Linfini
