@@ -29,17 +29,21 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import re
+import os
 
 """
 Fontions utilisées dans la résolution de l'équation différentielle
 """
 # Création de la matrice de discrétisation spatiale de l'e.d.p.
-def make_A_matrix_order2(N, R, dt, k, Deff):
+def make_A_matrix_order2(N, R, dt, k, Deff, Ce):
     "Génération de la matrice A"
     dr = R/(N-1)
     A = np.zeros((N, N))
     A[0, 0] = 1        # Condition de Dirichlett à la frontière
     A[N-1,N-3:N] = [1, -4, 3]
+
+# terme source manufacturé à implanter dans ce code pour trouver la solution manufacturée
+    M_st = -4*Ce*Deff*np.exp(-k*t)/R**2 + Ce*k*(1 - r**2/R**2)*np.exp(-k*t) - k*(-Ce*(1 - r**2/R**2)*np.exp(-k*t) + Ce)
 
     for i in range(1, N-1):
         r = dr*i
@@ -49,7 +53,7 @@ def make_A_matrix_order2(N, R, dt, k, Deff):
     return A
 
 def make_b_vector(N, Deff, Ce):
-    "G�n�ration de la matrice b"
+    "Génération de la matrice b"
     b = np.zeros(N)
     b[0] = Ce
     
@@ -57,13 +61,13 @@ def make_b_vector(N, Deff, Ce):
 
 
 
-
+print("Current working directory:", os.getcwd())
 start_delimiter = "START"
 end_delimiter = "END"
 
 data_dict = {}
 
-with open("../data/Input_data.txt", "r") as file:
+with open("../Devoir 2/data/Input_data.txt", "r") as file:
     capture = False
 
     for line in file:
@@ -90,20 +94,20 @@ matrix = [[data_dict.get("k", 0), data_dict.get("Deff", 0),
            data_dict.get("Ce", 0), data_dict.get("N", 0), 
            data_dict.get("Ntemps", 0)]]
 
-# Param�tres spatiaux      
+# Param�tres spatiaux      
 N = data_dict.get("N")
 R = data_dict.get("R")
 Ce = data_dict.get("Ce")
 r = np.linspace(0, R, N)
 
 
-# Param�tres temporels
+# Param�tres temporels
 Ntemps = data_dict.get("Ntemps")
 start = data_dict.get("temps_start")
 stop = data_dict.get("temps_stop")
 
 
-# Param�tres physiques
+# Param�tres physiques
 k = data_dict.get("k")
 Deff = data_dict.get("Deff")
 time_vector = np.linspace(start, stop, Ntemps)
@@ -111,7 +115,7 @@ dt = (stop-start)/Ntemps
 
 results_matrix = []
 
-A = make_A_matrix_order2(N, R, dt, k, Deff)
+A = make_A_matrix_order2(N, R, dt, k, Deff,Ce)
 b = make_b_vector(N, Deff, Ce)
 results_matrix.append(b)
 
@@ -141,12 +145,3 @@ cbar.set_label("Time step (t)")
 
 plt.show()
 
-
-# Objets contenant les noeuds et les erreurs L1, L2 et Linfini
-vect_N= []
-L1_1 = []
-L1_2 = []
-L2_1 = []
-L2_2 = []
-Linf_1 = []
-Linf_2 = []
