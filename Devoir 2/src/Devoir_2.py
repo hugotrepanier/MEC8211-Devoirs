@@ -28,6 +28,7 @@ existe, donc, le profil parabolique ne deviendra probablement pas complètement 
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
+import copy
 import re
 import os
 
@@ -54,7 +55,6 @@ def make_A_matrix_order2(N, R, dt, k, Deff, Ce):
 def make_b_vector(N, Deff, Ce):
     "Génération de la matrice b"
     b = np.zeros(N)
-    b[N-1] = Ce
     
     return b
 
@@ -75,7 +75,9 @@ def verification(N, R, dt, t_vector, k, Deff, Ce) :
     
     A = make_A_matrix_order2(N, R, dt, k, Deff,Ce)
     b = make_b_vector(N, Deff, Ce)
-    b_S = b
+    b_S[0] = 0
+    b_S[N-1] = 20
+    b_S = copy.deepcopy(b)
  
     results_matrix = [b_S]
  
@@ -83,10 +85,10 @@ def verification(N, R, dt, t_vector, k, Deff, Ce) :
         b_S = b + dt*compute_M_st(r, time, Deff, k, R, Ce)
         b_S[0] = 0
         b_S[N-1] = 20
-        C_t_pdt = np.linalg.solve(A, b_S)
-        results_matrix.append(C_t_pdt)
-        b = C_t_pdt
-        b_S = b
+        C_t_pdt = copy.deepcopy(np.linalg.solve(A, b_S))
+        results_matrix.append(copy.deepcopy(C_t_pdt))
+        b = copy.deepcopy(C_t_pdt)
+        b_S = copy.deepcopy(b)
     
     return results_matrix
 
@@ -99,14 +101,19 @@ def resolution(N, R, dt, t_vector, k, Deff, Ce) :
     results_matrix = []
     A = make_A_matrix_order2(N, R, dt, k, Deff,Ce)
     b = make_b_vector(N, Deff, Ce)
+    print("b : ", b)
+    b[0] = 0
+    b[N-1] = 20
     results_matrix.append(b)
 
     for time in time_vector :
         b[0] = 0
         b[N-1] = 20
-        C_t_pdt = np.linalg.solve(A, b)
-        results_matrix.append(C_t_pdt)
-        b = C_t_pdt
+        C_t_pdt = copy.deepcopy(np.linalg.solve(A, b))
+        #print("C_t_pdt = ", C_t_pdt)
+        results_matrix.append(copy.deepcopy(C_t_pdt))
+        #print("Results_matrix = ", results_matrix)
+        b = copy.deepcopy(C_t_pdt)
         
     return results_matrix
 
@@ -121,7 +128,6 @@ data_dict = {}
 
 with open("../data/Input_data.txt", "r") as file:
     capture = False
-
     for line in file:
         line = line.strip()
         if line == start_delimiter:
@@ -201,7 +207,7 @@ C_values = []
 plt.figure(figsize=(10, 6))
 for t in range(len(t_values)):
     C_values.append(C_MMS(r_values, t_values[t]))
-    plt.plot(r_values, C_values[t], label=f"t = {t:.1e} s")
+    plt.plot(r_values, C_values[t], label=f"t = {t_values[t]:.1e} s")
 
 plt.ylim(0, None)
 plt.xlabel("r (m)")
