@@ -66,14 +66,14 @@ def compute_M_st(r, t, Deff, k, R, Ce):
     # term_2 = k*((-20 + 20*(r**2)/(R**2))*np.exp((-4*10**(-9)) * t) + 20)
     # term_3 = (-4.0*10**(-9))*(-20 + (20*r**2)/(R**2))*np.exp((-4*10**(-9))*t)
     # result = term_1 + term_2 + term_3
-    # result = -4*Ce*Deff*np.exp(-k*t)/R**2 + Ce*k*(1 - r**2/R**2)*np.exp(-k*t) - k*(-Ce*(1 - r**2/R**2)*np.exp(-k*t) + Ce)
-    result = (-4*Deff*Ce*np.exp(-k*t))/(R**2) + (k*Ce)
+    result = -4*Ce*Deff*np.exp(-k*t)/R**2 + Ce*k*(1 - r**2/R**2)*np.exp(-k*t) + k*(-Ce*(1 - r**2/R**2)*np.exp(-k*t) + Ce)
+    # result = (-4*Deff*Ce*np.exp(-k*t))/(R**2) + (k*Ce)
     return result
 
 def verification(N, R, dt, t_vector, k, Deff, Ce) :
     
-    # Discrétisation dans l'espace
-    r_vector = r_values = np.linspace(0, R, N)
+    # DiscrÃ©tisation dans l'espace
+    r_vector = np.linspace(0, R, N)
     dr = R/(N-1)
     
     A = make_A_matrix_order2(N, R, dt, k, Deff,Ce)
@@ -94,8 +94,8 @@ def verification(N, R, dt, t_vector, k, Deff, Ce) :
 
 def resolution(N, R, dt, t_vector, k, Deff, Ce) :
     
-    # Discrétisation dans l'espace
-    r_vector = r_values = np.linspace(0, R, N)
+    # DiscrÃ©tisation dans l'espace
+    r_vector = np.linspace(0, R, N)
     dr = R/(N-1)
     
     results_matrix = []
@@ -117,14 +117,14 @@ def resolution(N, R, dt, t_vector, k, Deff, Ce) :
 
 
 
-# ----- Entrée des données -----
+# ----- Entrï¿½e des donnï¿½es -----
 print("Current working directory:", os.getcwd())
 start_delimiter = "START"
 end_delimiter = "END"
 
 data_dict = {}
 
-with open("../data/Input_data.txt", "r") as file:
+with open("../Devoir 2/data/Input_data.txt", "r") as file:
     capture = False
     for line in file:
         line = line.strip()
@@ -168,9 +168,10 @@ time_vector = np.linspace(start, stop, Ntemps)
 dt = time_vector[1] - time_vector[0]
 
 
+# Chemin pour la sauvegarde des graphiques
+output_folder = '../Devoir 2/results'
 
-
-# ----- Vérification du code par la méthode des solutions manufacturées (MMS) -----
+# ----- Vï¿½rification du code par la mï¿½thode des solutions manufacturï¿½es (MMS) -----
 # Call the verification function
 results_test = verification(N, R, dt, time_vector, k, Deff, Ce)
 
@@ -186,12 +187,15 @@ plt.ylabel("C(r, t)")
 plt.title("Numerical Solution at Different Time Steps")
 plt.legend()
 plt.grid(True)
+
+file_path = os.path.join(output_folder, 'sol_manufacturee_num.png')
+plt.savefig(file_path)
 plt.show()
 
 
 
 
-# ----- Solution manufacturée -----
+# ----- Solution manufacturï¿½e -----
 # Plot the manufactured solution
 r_values = np.linspace(0, R, N)  # r from 0 to R
 t_values = np.linspace(start, stop, Ntemps)  # Time from 0 to 4e9 seconds, 5 time steps
@@ -209,13 +213,16 @@ plt.ylabel("C_MMS(r, t)")
 plt.title("Manufactured Solution $C_{MMS}(r, t)$ for Different Time Steps")
 plt.legend()
 plt.grid(True)
+
+file_path = os.path.join(output_folder, 'sol_manufacturee.png')
+plt.savefig(file_path)
 plt.show()
 
 
 
 
-# ----- Solution numérique de l'énoncé -----
-# Calcul de la solution du problème de l'énoncé
+# ----- Solution numï¿½rique de l'ï¿½noncï¿½ -----
+# Calcul de la solution du problï¿½me de l'ï¿½noncï¿½
 results = resolution(N, R, dt, time_vector, k, Deff, Ce)
 
 # Plot the results
@@ -240,5 +247,9 @@ sm.set_array([])
 cbar = plt.colorbar(sm, ax=plt.gca())  # Explicitly associate with the current Axes
 cbar.set_label("Time step (t)")
 
+file_path = os.path.join(output_folder, 'sol_pilier_num.png')
+plt.savefig(file_path)
 plt.show()
+
+
 
