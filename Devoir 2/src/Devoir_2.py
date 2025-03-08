@@ -67,7 +67,7 @@ def compute_M_st(r, t, Deff, k, R, Ce):
     # term_3 = (-4.0*10**(-9))*(-20 + (20*r**2)/(R**2))*np.exp((-4*10**(-9))*t)
     # result = term_1 + term_2 + term_3
     # result = -4*Ce*Deff*np.exp(-k*t)/R**2 + Ce*k*(1 - r**2/R**2)*np.exp(-k*t) - k*(-Ce*(1 - r**2/R**2)*np.exp(-k*t) + Ce)
-    result = -4*Deff*Ce*np.exp(-k*t)/R**2 + k*Ce
+    result = (-4*Deff*Ce*np.exp(-k*t))/(R**2) + (k*Ce)
     return result
 
 def verification(N, R, dt, t_vector, k, Deff, Ce) :
@@ -78,18 +78,17 @@ def verification(N, R, dt, t_vector, k, Deff, Ce) :
     
     A = make_A_matrix_order2(N, R, dt, k, Deff,Ce)
     b = make_b_vector(N, Deff, Ce)
-    b_S = copy.deepcopy(b) + C_MMS(r_vector, 0)
+    b = copy.deepcopy(b) + C_MMS(r_vector, 0)
  
-    results_matrix = [b_S]
+    results_matrix = [b]
  
     for time in time_vector :
-        b_S = b + dt*compute_M_st(r, time, Deff, k, R, Ce)
+        b_S = copy.deepcopy(b) + dt*compute_M_st(r, time, Deff, k, R, Ce)
         b_S[0] = 0
         b_S[N-1] = 20
         C_t_pdt = copy.deepcopy(np.linalg.solve(A, b_S))
         results_matrix.append(copy.deepcopy(C_t_pdt))
         b = copy.deepcopy(C_t_pdt)
-        b_S = copy.deepcopy(b)
     
     return results_matrix
 
