@@ -39,35 +39,87 @@ def make_A_matrix_order2(N, R, dt, k, Deff, Ce):
     "GÃ©nÃ©ration de la matrice A"
     dr = R/(N-1)
     A = np.zeros((N, N))
-    A[0, 0] = 1        # Condition de Dirichlett Ã  la frontiÃ¨re
-    A[N-1,N-3:N] = [1, -4, 3]
-
-# terme source manufacturÃ© Ã  implanter dans ce code pour trouver la solution manufacturÃ©e
-    M_st = -4*Ce*Deff*np.exp(-k*t)/R**2 + Ce*k*(1 - r**2/R**2)*np.exp(-k*t) - k*(-Ce*(1 - r**2/R**2)*np.exp(-k*t) + Ce)
+            # Condition de Dirichlett Ã  la frontiÃ¨re
+    # A[N-1,N-3:N] = [1, -4, 3]
+    A[0,0:3] = [-3, 4, -1]
+    A[N-1, N-1] = 1
 
     for i in range(1, N-1):
         r = dr*i
         A[i, i-1:i+2] = [((dt*Deff)/(2*r*dr) - (dt*Deff)/(dr**2)),
-                         (1 + dt*k + (2*dt*Deff)/(dr**2)),
+                         (1 + k*dt + (2*dt*Deff)/(dr**2)),
                          ((-dt*Deff)/(2*r*dr) - (dt*Deff)/(dr**2))]
     return A
 
 def make_b_vector(N, Deff, Ce):
     "GÃ©nÃ©ration de la matrice b"
     b = np.zeros(N)
-    b[0] = Ce
+    b[N-1] = Ce
     
     return b
 
+def compute_M_st(r, t, Deff, k, R, Ce):
+    # term_1 = (80*Deff*np.exp((-4.0*10**(-9)) * t))/(R**2)
+    # term_2 = k*((-20 + 20*(r**2)/(R**2))*np.exp((-4*10**(-9)) * t) + 20)
+    # term_3 = (-4.0*10**(-9))*(-20 + (20*r**2)/(R**2))*np.exp((-4*10**(-9))*t)
+    # result = term_1 + term_2 + term_3
+    # result = -4*Ce*Deff*np.exp(-k*t)/R**2 + Ce*k*(1 - r**2/R**2)*np.exp(-k*t) - k*(-Ce*(1 - r**2/R**2)*np.exp(-k*t) + Ce)
+    result = -4*Deff*Ce*np.exp(-k*t)/R**2 + k*Ce
+    return result
+
+def verification(N, R, dt, t_vector, k, Deff, Ce) :
+    
+    # Discrétisation dans l'espace
+    r_vector = r_values = np.linspace(0, R, N)
+    dr = R/(N-1)
+    
+    A = make_A_matrix_order2(N, R, dt, k, Deff,Ce)
+    b = make_b_vector(N, Deff, Ce)
+    b_S = b
+ 
+    results_matrix = [b_S]
+ 
+    for time in time_vector :
+        b_S = b + dt*compute_M_st(r, time, Deff, k, R, Ce)
+        b_S[0] = 0
+        b_S[N-1] = 20
+        C_t_pdt = np.linalg.solve(A, b_S)
+        results_matrix.append(C_t_pdt)
+        b = C_t_pdt
+        b_S = b
+    
+    return results_matrix
+
+def resolution(N, R, dt, t_vector, k, Deff, Ce) :
+    
+    # Discrétisation dans l'espace
+    r_vector = r_values = np.linspace(0, R, N)
+    dr = R/(N-1)
+    
+    results_matrix = []
+    A = make_A_matrix_order2(N, R, dt, k, Deff,Ce)
+    b = make_b_vector(N, Deff, Ce)
+    results_matrix.append(b)
+
+    for time in time_vector :
+        b[0] = 0
+        b[N-1] = 20
+        C_t_pdt = np.linalg.solve(A, b)
+        results_matrix.append(C_t_pdt)
+        b = C_t_pdt
+        
+    return results_matrix
 
 
+
+# ----- Entrée des données -----
 print("Current working directory:", os.getcwd())
 start_delimiter = "START"
 end_delimiter = "END"
 
 data_dict = {}
 
-with open("../Devoir 2/data/Input_data.txt", "r") as file:
+with open("../data/Input_data.txt", "r") as file:
     capture = False
 
     for line in file:
@@ -100,42 +152,87 @@ R = data_dict.get("R")
 Ce = data_dict.get("Ce")
 r = np.linspace(0, R, N)
 
-
 # Paramï¿½tres temporels
 Ntemps = data_dict.get("Ntemps")
 start = data_dict.get("temps_start")
 stop = data_dict.get("temps_stop")
 
-
 # Paramï¿½tres physiques
 k = data_dict.get("k")
 Deff = data_dict.get("Deff")
 time_vector = np.linspace(start, stop, Ntemps)
-dt = (stop-start)/Ntemps
+dt = time_vector[1] - time_vector[0]
 
-results_matrix = []
 
-A = make_A_matrix_order2(N, R, dt, k, Deff,Ce)
-b = make_b_vector(N, Deff, Ce)
-results_matrix.append(b)
 
-for t in time_vector :
-    b[N-1] = 0
-    C_t_pdt = np.linalg.solve(A, b)
-    b = C_t_pdt
-    results_matrix.append(b)
+
+# ----- Vérification du code par la méthode des solutions manufacturées (MMS) -----
+# Call the verification function
+results_test = verification(N, R, dt, time_vector, k, Deff, Ce)
+
+# Plot the results
+r_values = np.linspace(0, R, N)
+plt.figure(figsize=(10, 6))
+for t in range(0, len(time_vector)):  # Plot every 5th time step
+    plt.plot(r_values, results_test[t], label=f"t = {time_vector[t]:.1e} s")
+
+plt.ylim(0, None)
+plt.xlabel("r (m)")
+plt.ylabel("C(r, t)")
+plt.title("Numerical Solution at Different Time Steps")
+plt.legend()
+plt.grid(True)
+plt.show()
+
+
+
+
+# ----- Solution manufacturée -----
+# Define the manufactured solution
+def C_MMS(r, t):
+    return -Ce* (1 - r**2 / R**2) * np.exp(-4 * 1e-9 * t) + Ce
+
+# Plot the manufactured solution
+r_values = np.linspace(0, R, N)  # r from 0 to R
+t_values = np.linspace(0, 4e9, Ntemps)  # Time from 0 to 4e9 seconds, 5 time steps
+
+C_values = []
+
+plt.figure(figsize=(10, 6))
+for t in range(len(t_values)):
+    C_values.append(C_MMS(r_values, t_values[t]))
+    plt.plot(r_values, C_values[t], label=f"t = {t:.1e} s")
+
+plt.ylim(0, None)
+plt.xlabel("r (m)")
+plt.ylabel("C_MMS(r, t)")
+plt.title("Manufactured Solution $C_{MMS}(r, t)$ for Different Time Steps")
+plt.legend()
+plt.grid(True)
+plt.show()
+
+
+
+
+# ----- Solution numérique de l'énoncé -----
+# Calcul de la solution du problème de l'énoncé
+results = resolution(N, R, dt, time_vector, k, Deff, Ce)
+
+# Plot the results
+
 
 # Define colormap and normalization
 cmap = cm.viridis  
 norm = plt.Normalize(vmin=0, vmax=Ntemps-1)
 
-plt.figure(figsize=(8, 5))
+plt.figure(figsize=(10, 6))
 for i in range(Ntemps):
-    plt.plot(r, results_matrix[i][::-1], color=cmap(norm(i)), alpha=0.8)  # Gradient color
+    plt.plot(r_values, results[i], color=cmap(norm(i)), alpha=0.8)  # Gradient color
 
+plt.ylim(0, None)
+plt.xlabel("r (m)")
+plt.ylabel("C(r, t)")
 plt.title("Concentration dans le pilier en fonction de la position et du temps", fontweight='bold')
-plt.ylabel("Concentration (mol/m^3)")
-plt.xlabel("Position (m)")
 
 # Ensure colorbar is correctly linked
 sm = cm.ScalarMappable(cmap=cmap, norm=norm)
