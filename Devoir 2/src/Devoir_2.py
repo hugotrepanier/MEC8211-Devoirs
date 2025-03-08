@@ -82,8 +82,8 @@ def verification(N, R, dt, t_vector, k, Deff, Ce) :
  
     results_matrix = [b]
  
-    for time in time_vector :
-        b_S = copy.deepcopy(b) + dt*compute_M_st(r, time, Deff, k, R, Ce)
+    for time in time_vector[1:] :
+        b_S = copy.deepcopy(b) + dt*compute_M_st(r_vector, time, Deff, k, R, Ce)
         b_S[0] = 0
         b_S[N-1] = 20
         C_t_pdt = copy.deepcopy(np.linalg.solve(A, b_S))
@@ -104,7 +104,7 @@ def resolution(N, R, dt, t_vector, k, Deff, Ce) :
 
     results_matrix.append(b)
 
-    for time in time_vector :
+    for time in time_vector[1:] :
         b[0] = 0
         b[N-1] = 20
         C_t_pdt = copy.deepcopy(np.linalg.solve(A, b))
@@ -115,6 +115,98 @@ def resolution(N, R, dt, t_vector, k, Deff, Ce) :
         
     return results_matrix
 
+def plot_vs_rt(r_vector, t_vector, C_matrix, title, output_name) :
+    """
+    Génération, affichage et sauvegarde des graphiques des résultats
+    
+    Paramètres
+    ----------
+    r_vetor (array) : Vecteur des points de discrétisation dans l'espace
+    t_vector (array) : Vecteur des points de discrétisation dans le temps
+    C_matrix (array (len(t_vector), len(r_vector))) : Matrice des résultats
+    title (string) : Titre du graphique à afficher
+    output_name (string) : Nom du fichier de sauvegarde
+
+    Sorties
+    -------
+    File : Sauvegarde du graphique
+    """
+    # Define colormap and normalization
+    cmap = cm.viridis  
+    norm = plt.Normalize(vmin=0, vmax=Ntemps-1)
+    
+    # Plot the results
+    plt.figure(figsize=(10, 6))
+    for t in range(len(t_vector)):  # Plot every 5th time step
+        plt.plot(r_vector, C_matrix[t], color=cmap(norm(t)), alpha=0.8, label=f"t = {time_vector[t]:.1e} s")
+
+    plt.ylim(0, None)
+    plt.xlabel("r (m)")
+    plt.ylabel("C(r, t)")
+    plt.title(title)
+
+    # Ensure colorbar is correctly linked
+    sm = cm.ScalarMappable(cmap=cmap, norm=norm)
+    sm.set_array([])  
+    cbar = plt.colorbar(sm, ax=plt.gca())  # Explicitly associate with the current Axes
+    cbar.set_label("Time step (t)")
+    plt.grid(True)
+    file_path = os.path.join(output_folder, output_name)
+    plt.savefig(file_path)
+    plt.show()
+    
+    return None
+
+def calcul_L1_N(N, Ntemps, results_num, results_analytique) :
+    " Calcul de l'erreur L1 pour l'étude de l'influence de N. L'erreur est calculé en utilisant la dernière courbe obtenue."
+    results_num_np = np.array(results_num)
+    results_analytique_np = np.array(results_analytique)
+    L1_N = ((1/N)*np.sum(np.abs(results_num_np[Ntemps-1] - results_analytique_np[Ntemps-1])))
+
+    return L1_N
+
+def calcul_L1_T(N, Ntemps, results_num, results_analytique) :
+    " Calcul de l'erreur L1 pour l'étude de l'influence de T. L'erreur est calculé en utilisant toutes les courbes obtenues à la position centrale."
+    results_num_np = np.array(results_num)
+    results_analytique_np = np.array(results_analytique)
+    L1_N = ((1/Ntemps)*np.sum(np.abs(results_num_np[:,0] - results_analytique_np[:,0])))
+
+    return L1_N
+
+def calcul_L2_N(N, Ntemps, results_num, results_analytique) :
+    " Calcul de l'erreur L2 pour l'étude de l'influence de N. L'erreur est calculé en utilisant la dernière courbe obtenue."
+    results_num_np = np.array(results_num)
+    results_analytique_np = np.array(results_analytique)
+    L2_N = (np.sqrt((1/N)*np.sum(np.abs(results_num_np[Ntemps-1] - results_analytique_np[Ntemps-1])**2)))
+
+    return L2_N
+
+def calcul_L2_T(N, Ntemps, results_num, results_analytique) :
+    " Calcul de l'erreur L2 pour l'étude de l'influence de T. L'erreur est calculé en utilisant toutes les courbes obtenues à la position centrale."
+    results_num_np = np.array(results_num)
+    results_analytique_np = np.array(results_analytique)
+    L2_T = (np.sqrt((1/Ntemps)*np.sum(np.abs(results_num_np[:,0] - results_analytique_np[:,0])**2)))
+
+    return L2_T
+
+def calcul_Linf_N(N, Ntemps, results_num, results_analytique) :
+    " Calcul de l'erreur Linf pour l'étude de l'influence de N. L'erreur est calculé en utilisant la dernière courbe obtenue."
+    results_num_np = np.array(results_num)
+    results_analytique_np = np.array(results_analytique)
+    Linf_N = (np.max(abs(results_num_np[Ntemps-1]-results_analytique_np[Ntemps-1])))
+
+    return Linf_N
+
+def calcul_Linf_T(N, Ntemps, results_num, results_analytique) :
+    " Calcul de l'erreur Linf pour l'étude de l'influence de T. L'erreur est calculé en utilisant toutes les courbes obtenues à la position centrale."
+    results_num_np = np.array(results_num)
+    results_analytique_np = np.array(results_analytique)
+    Linf_T = (np.max(abs(results_num_np[:,0]-results_analytique_np[:,0])))
+
+    return Linf_T
+
+
+
 
 
 # ----- Entrï¿½e des donnï¿½es -----
@@ -124,7 +216,7 @@ end_delimiter = "END"
 
 data_dict = {}
 
-with open("../Devoir 2/data/Input_data.txt", "r") as file:
+with open("../data/Input_data.txt", "r") as file:
     capture = False
     for line in file:
         line = line.strip()
@@ -154,7 +246,7 @@ matrix = [[data_dict.get("k", 0), data_dict.get("Deff", 0),
 N = data_dict.get("N")
 R = data_dict.get("R")
 Ce = data_dict.get("Ce")
-r = np.linspace(0, R, N)
+r_values = np.linspace(0, R, N)
 
 # Paramï¿½tres temporels
 Ntemps = data_dict.get("Ntemps")
@@ -167,100 +259,50 @@ Deff = data_dict.get("Deff")
 time_vector = np.linspace(start, stop, Ntemps)
 dt = time_vector[1] - time_vector[0]
 
-# Objets contenant les valeurs des erreurs L1, L2 et Linfini
-
-L1_s = []
-L1_t = []
-L2_S = []
-L2_t = []
-Linf_s = []
-Linf_t = []
-
 # Chemin pour la sauvegarde des graphiques
-output_folder = '../Devoir 2/results'
+output_folder = '../results'
 
 # ----- Vï¿½rification du code par la mï¿½thode des solutions manufacturï¿½es (MMS) -----
 # Call the verification function
 results_verif_num = verification(N, R, dt, time_vector, k, Deff, Ce)
 
 # Plot the results
-r_values = np.linspace(0, R, N)
-plt.figure(figsize=(10, 6))
-for t in range(0, len(time_vector)):  # Plot every 5th time step
-    plt.plot(r_values, results_verif_num[t], label=f"t = {time_vector[t]:.1e} s")
+plt1 = plot_vs_rt(r_values, time_vector, results_verif_num, 
+                  "Numerical Solution at Different Time Steps", 'sol_manufacturee_num.png')
 
-plt.ylim(0, None)
-plt.xlabel("r (m)")
-plt.ylabel("C(r, t)")
-plt.title("Numerical Solution at Different Time Steps")
-plt.legend()
-plt.grid(True)
-
-file_path = os.path.join(output_folder, 'sol_manufacturee_num.png')
-plt.savefig(file_path)
-plt.show()
-
-
-
-
-# ----- Solution manufacturï¿½e -----
-# Plot the manufactured solution
-r_values = np.linspace(0, R, N)  # r from 0 to R
-t_values = np.linspace(start, stop, Ntemps)  # Time from 0 to 4e9 seconds, 5 time steps
-
+# # ----- Solution manufacturï¿½e -----
+# # Plot the manufactured solution
 C_manuf = []
+for t in range(len(time_vector)):
+     C_manuf.append(C_MMS(r_values, time_vector[t]))
 
-plt.figure(figsize=(10, 6))
-for t in range(len(t_values)):
-    C_manuf.append(C_MMS(r_values, t_values[t]))
-    plt.plot(r_values, C_manuf[t], label=f"t = {t_values[t]:.1e} s")
+# Plot the results
+plt_2 = plot_vs_rt(r_values, time_vector, C_manuf, 
+                   "Manufactured Solution $C_{MMS}(r, t)$ for Different Time Steps", 'sol_manufacturee.png')
 
-plt.ylim(0, None)
-plt.xlabel("r (m)")
-plt.ylabel("C_MMS(r, t)")
-plt.title("Manufactured Solution $C_{MMS}(r, t)$ for Different Time Steps")
-plt.legend()
-plt.grid(True)
-
-file_path = os.path.join(output_folder, 'sol_manufacturee.png')
-plt.savefig(file_path)
-plt.show()
-
-
-
-
-# ----- Solution numï¿½rique de l'ï¿½noncï¿½ -----
-# Calcul de la solution du problï¿½me de l'ï¿½noncï¿½
+# # ----- Solution numï¿½rique de l'ï¿½noncï¿½ -----
+# # Calcul de la solution du problï¿½me de l'ï¿½noncï¿½
 results_pilier_num = resolution(N, R, dt, time_vector, k, Deff, Ce)
 
 # Plot the results
+plt1 = plot_vs_rt(r_values, time_vector, results_pilier_num, 
+                  "Concentration dans le pilier en fonction de la position et du temps", 'sol_pilier_num.png')
 
+L1_N = calcul_L1_N(N, Ntemps, results_verif_num, C_manuf)
+print("L'erreur L1_N pour N =", N, " est :", L1_N)
 
-# Define colormap and normalization
-cmap = cm.viridis  
-norm = plt.Normalize(vmin=0, vmax=Ntemps-1)
+L1_T = calcul_L1_T(N, Ntemps, results_verif_num, C_manuf)
+print("L'erreur L1_T pour Ntemps =", Ntemps, " est :", L1_T)
 
-plt.figure(figsize=(10, 6))
-for i in range(Ntemps):
-    plt.plot(r_values, results_pilier_num[i], color=cmap(norm(i)), alpha=0.8)  # Gradient color
+L2_N = calcul_L2_N(N, Ntemps, results_verif_num, C_manuf)
+print("L'erreur L2_N pour N =", N, " est :", L2_N)
 
-plt.ylim(0, None)
-plt.xlabel("r (m)")
-plt.ylabel("C(r, t)")
-plt.title("Concentration dans le pilier en fonction de la position et du temps", fontweight='bold')
+L2_T = calcul_L2_T(N, Ntemps, results_verif_num, C_manuf)
+print("L'erreur L2_T pour Ntemps =", Ntemps, " est :", L2_T)
 
-# Ensure colorbar is correctly linked
-sm = cm.ScalarMappable(cmap=cmap, norm=norm)
-sm.set_array([])  
-cbar = plt.colorbar(sm, ax=plt.gca())  # Explicitly associate with the current Axes
-cbar.set_label("Time step (t)")
+Linf_N = calcul_Linf_N(N, Ntemps, results_verif_num, C_manuf)
+print("L'erreur Linf_N pour N =", N, " est :", Linf_N)
 
-file_path = os.path.join(output_folder, 'sol_pilier_num.png')
-plt.savefig(file_path)
-plt.show()
-
-
-# Graphiques de convergence
-
-
+Linf_T = calcul_Linf_T(N, Ntemps, results_verif_num, C_manuf)
+print("L'erreur Linf_T pour Ntemps =", Ntemps, " est :", Linf_T)
 
