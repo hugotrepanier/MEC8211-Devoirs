@@ -58,6 +58,9 @@ def make_b_vector(N, Deff, Ce):
     
     return b
 
+def C_MMS(r, t):
+    return -Ce* (1 - r**2 / R**2) * np.exp(-4 * 1e-9 * t) + Ce
+
 def compute_M_st(r, t, Deff, k, R, Ce):
     # term_1 = (80*Deff*np.exp((-4.0*10**(-9)) * t))/(R**2)
     # term_2 = k*((-20 + 20*(r**2)/(R**2))*np.exp((-4*10**(-9)) * t) + 20)
@@ -75,9 +78,7 @@ def verification(N, R, dt, t_vector, k, Deff, Ce) :
     
     A = make_A_matrix_order2(N, R, dt, k, Deff,Ce)
     b = make_b_vector(N, Deff, Ce)
-    b_S[0] = 0
-    b_S[N-1] = 20
-    b_S = copy.deepcopy(b)
+    b_S = copy.deepcopy(b) + C_MMS(r_vector, 0)
  
     results_matrix = [b_S]
  
@@ -101,9 +102,7 @@ def resolution(N, R, dt, t_vector, k, Deff, Ce) :
     results_matrix = []
     A = make_A_matrix_order2(N, R, dt, k, Deff,Ce)
     b = make_b_vector(N, Deff, Ce)
-    print("b : ", b)
-    b[0] = 0
-    b[N-1] = 20
+
     results_matrix.append(b)
 
     for time in time_vector :
@@ -194,13 +193,9 @@ plt.show()
 
 
 # ----- Solution manufacturée -----
-# Define the manufactured solution
-def C_MMS(r, t):
-    return -Ce* (1 - r**2 / R**2) * np.exp(-4 * 1e-9 * t) + Ce
-
 # Plot the manufactured solution
 r_values = np.linspace(0, R, N)  # r from 0 to R
-t_values = np.linspace(0, 4e9, Ntemps)  # Time from 0 to 4e9 seconds, 5 time steps
+t_values = np.linspace(start, stop, Ntemps)  # Time from 0 to 4e9 seconds, 5 time steps
 
 C_values = []
 
