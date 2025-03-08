@@ -167,19 +167,27 @@ Deff = data_dict.get("Deff")
 time_vector = np.linspace(start, stop, Ntemps)
 dt = time_vector[1] - time_vector[0]
 
+# Objets contenant les valeurs des erreurs L1, L2 et Linfini
+
+L1_s = []
+L1_t = []
+L2_S = []
+L2_t = []
+Linf_s = []
+Linf_t = []
 
 # Chemin pour la sauvegarde des graphiques
 output_folder = '../Devoir 2/results'
 
 # ----- V�rification du code par la m�thode des solutions manufactur�es (MMS) -----
 # Call the verification function
-results_test = verification(N, R, dt, time_vector, k, Deff, Ce)
+results_verif_num = verification(N, R, dt, time_vector, k, Deff, Ce)
 
 # Plot the results
 r_values = np.linspace(0, R, N)
 plt.figure(figsize=(10, 6))
 for t in range(0, len(time_vector)):  # Plot every 5th time step
-    plt.plot(r_values, results_test[t], label=f"t = {time_vector[t]:.1e} s")
+    plt.plot(r_values, results_verif_num[t], label=f"t = {time_vector[t]:.1e} s")
 
 plt.ylim(0, None)
 plt.xlabel("r (m)")
@@ -200,12 +208,12 @@ plt.show()
 r_values = np.linspace(0, R, N)  # r from 0 to R
 t_values = np.linspace(start, stop, Ntemps)  # Time from 0 to 4e9 seconds, 5 time steps
 
-C_values = []
+C_manuf = []
 
 plt.figure(figsize=(10, 6))
 for t in range(len(t_values)):
-    C_values.append(C_MMS(r_values, t_values[t]))
-    plt.plot(r_values, C_values[t], label=f"t = {t_values[t]:.1e} s")
+    C_manuf.append(C_MMS(r_values, t_values[t]))
+    plt.plot(r_values, C_manuf[t], label=f"t = {t_values[t]:.1e} s")
 
 plt.ylim(0, None)
 plt.xlabel("r (m)")
@@ -223,7 +231,7 @@ plt.show()
 
 # ----- Solution num�rique de l'�nonc� -----
 # Calcul de la solution du probl�me de l'�nonc�
-results = resolution(N, R, dt, time_vector, k, Deff, Ce)
+results_pilier_num = resolution(N, R, dt, time_vector, k, Deff, Ce)
 
 # Plot the results
 
@@ -234,7 +242,7 @@ norm = plt.Normalize(vmin=0, vmax=Ntemps-1)
 
 plt.figure(figsize=(10, 6))
 for i in range(Ntemps):
-    plt.plot(r_values, results[i], color=cmap(norm(i)), alpha=0.8)  # Gradient color
+    plt.plot(r_values, results_pilier_num[i], color=cmap(norm(i)), alpha=0.8)  # Gradient color
 
 plt.ylim(0, None)
 plt.xlabel("r (m)")
@@ -250,6 +258,9 @@ cbar.set_label("Time step (t)")
 file_path = os.path.join(output_folder, 'sol_pilier_num.png')
 plt.savefig(file_path)
 plt.show()
+
+
+# Graphiques de convergence
 
 
 
