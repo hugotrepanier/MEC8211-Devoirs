@@ -1,0 +1,146 @@
+#!/usr/bin/bash
+#set -ex
+
+# Check number of arguments
+if test $# -ne 3; then
+    echo "Usage: analyse_auto {fichier du devoir 2} {fichier des paramètres d'entrés} {fichier contenant les nombres de points}"
+    exit 1
+fi
+
+# Initialize variables
+editor=nano
+nb_resolutions=$(wc -l < "$3")  # Number of resolutions
+nb_compt=1  # Loop counter
+fixed_interval=$(tail -n 1 "$3")  # Example value for YYYY
+
+
+# lecture des bornes a et b dans le fichier $1.cpp
+rayon_min=0
+rayon_max=`grep 'R =' ../data/$2.txt | awk '{print $NF}'`
+
+temps_min=`grep 'temps_start =' ../data/$2.txt | awk '{print $NF}'`
+temps_max=`grep 'temps_stop =' ../data/$2.txt | awk '{print $NF}'`
+
+echo ""
+echo "*******************************************"
+echo "        ANALYSE DE CONVERGENCE"
+echo "*******************************************"
+echo ""
+echo "--> Nombre de résolutions testées : $nb_resolutions"
+echo ""
+
+echo "Analyse de convergence:" > resultats
+echo "" >> resultats
+
+# Check if the Python script exists
+if test -s "../src/$1.py"; then
+    echo "--> Le fichier Devoir_2.py existe !"
+    echo ""
+    echo "Editer le fichier $1.py (o-n) ?"
+    read -r rep
+    if test "$rep" = "o"; then
+        "$editor" "../src/$1.py"
+    fi
+else
+    echo "ALERTE: Le fichier $1.py n'existe pas ! Sortie du script..."
+    exit 1
+fi
+
+# Boucle de résolution pour les différents pas de discrétisations spatiales, en posant Ntemps = 
+while [[ $nb_compt -le $nb_resolutions ]]; do
+    new_intervals=$(head -n "$nb_compt" "$3" | tail -n 1)  # Get the current number of intervals
+
+    echo ""
+    echo "--> Calcul pour $new_intervals intervalles...."
+
+    # Create simulation directory
+    mkdir -p "simulation_avec_$new_intervals/data"
+    mkdir -p "simulation_avec_$new_intervals/src"
+
+    # Replace placeholders in Input_data.txt
+    sed -e "s/XXXX/$new_intervals/" -e "s/YYYY/$fixed_interval/" -e 's/plot = "Affirmative"/plot = "Negative"/' "../data/Input_data.txt" > "simulation_avec_$new_intervals/data/Input_data.txt"
+    
+    # Debug: Print the modified file
+    echo "Modified Input_data.txt:"
+    cat "simulation_avec_$new_intervals/data/Input_data.txt"
+
+    # Copy the Python script
+    cp "../src/$1.py" "simulation_avec_$new_intervals/src/"
+
+    # Execute the Python script with the correct Input_data.txt path
+    python3 "simulation_avec_$new_intervals/src/$1.py" "simulation_avec_$new_intervals/data/Input_data.txt" >> resultats_N
+
+    # Clean up the simulation directory
+    rm -r "simulation_avec_$new_intervals"
+
+    echo ".... Done !"
+
+    # Increment the counter
+    nb_compt=$((nb_compt + 1))
+done
+
+nb_compt=1  # Reset counter
+# Boucle de résolution pour les différents pas de discrétisations temporelles, en posant N = 
+while [[ $nb_compt -le $nb_resolutions ]]; do
+    new_intervals=$(head -n "$nb_compt" "$3" | tail -n 1)  # Get the current number of intervals
+
+    echo ""
+    echo "--> Calcul pour $new_intervals intervalles...."
+
+    # Create simulation directory
+    mkdir -p "simulation_avec_$new_intervals/data"
+    mkdir -p "simulation_avec_$new_intervals/src"
+
+    # Replace placeholders in Input_data.txt
+    sed -e "s/YYYY/$new_intervals/" -e "s/XXXX/$fixed_interval/" -e 's/plot = "Affirmative"/plot = "Negative"/' "../data/Input_data.txt" > "simulation_avec_$new_intervals/data/Input_data.txt"
+    
+    # Debug: Print the modified file
+    echo "Modified Input_data.txt:"
+    cat "simulation_avec_$new_intervals/data/Input_data.txt"
+
+    # Copy the Python script
+    cp "../src/$1.py" "simulation_avec_$new_intervals/src/"
+
+    # Execute the Python script with the correct Input_data.txt path
+    python3 "simulation_avec_$new_intervals/src/$1.py" "simulation_avec_$new_intervals/data/Input_data.txt" >> resultats_T
+
+    # Clean up the simulation directory
+    rm -r "simulation_avec_$new_intervals"
+
+    echo ".... Done !"
+
+    # Increment the counter
+    nb_compt=$((nb_compt + 1))
+done
+
+
+# extraction des erreurs absolues dans le fichier de compilation des resultats
+# et récriture de ces seules valeurs dans le fichier "erreurs"
+grep 'L1_N' resultats_N | awk '{print $NF}' > erreurs_L1_N
+grep 'L2_N' resultats_N | awk '{print $NF}' > erreurs_L2_N
+grep 'Linf_N' resultats_N | awk '{print $NF}' > erreurs_Linf_N
+
+
+grep 'L1_T' resultats_T | awk '{print $NF}' > erreurs_L1_T
+grep 'L2_T' resultats_T | awk '{print $NF}' > erreurs_L2_T
+grep 'Linf_T' resultats_T | awk '{print $NF}' > erreurs_Linf_T
+
+# edition du fichier python permettant d'ajouter les bornes a et b et le nom du fichier passé
+# argument 2 ($2)
+sed -e "s/RAYON_A/$rayon_min/" -e "s/RAYON_B/$rayon_max/" -e "s/TEMPS_A/$temps_min/" -e "s/TEMPS_B/$temps_max/" -e "s/NOM_DU_FICHIER/$3/" analyse_de_convergence.py > analyse_de_convergence_run.py
+
+echo ""
+echo "--> Exécution du script python..."
+echo ""
+
+# exécution en arrière plan (&) du programme python analyse_de_convergence.py traçant
+# le graphe et obtenant la régression en loi de puissance
+python3 analyse_de_convergence_run.py &
+
+sleep 6
+ 
+echo ""
+echo "*******************************************"
+echo "     ANALYSE DE CONVERGENCE TERMINÉE"
+echo "*******************************************"
+echo ""
