@@ -15,12 +15,14 @@ Les variables sont situées entre les délimiteurs START et END
 # Données d'entrée :
 
 START
+plot = "Affirmative"
+
 R = 0.5
-k = 4*10**(-9) # s^-1 (Constante de réaction d'ordre 1)
-Deff = 10**(-10) # m^2/s (Coefficient de diffusion effectif du sel dans le béton)
-Ce = 20 # mol/m^3 (Concentration du sel à la surface du béton)
-N = 11 # noeuds (Nombre de noeuds dans la dimension spatiale du problème)
-Ntemps = 1000 # pas de temps (Nombre de pas de temps du problème transitoire)
+k = 4*10**(-9)
+Deff = 10**(-10)
+Ce = 20
+N = XXXX
+Ntemps = YYYY 
 temps_start = 0
 temps_stop = 4*10**9
 END
