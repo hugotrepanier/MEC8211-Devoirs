@@ -1,26 +1,27 @@
+# -*- coding: utf-8 -*-
 """
-POLYTECHNIQUE MONTRÉAL
-MEC8211 : VÉRIFICATION ET VALIDATION EN MODÉLISATION NUMÉRIQUE
+POLYTECHNIQUE MONTRÃ‰AL
+MEC8211 : VÃ‰RIFICATION ET VALIDATION EN MODÃ‰LISATION NUMÃ‰RIQUE
 
-DEVOIR 2 : VÉRIFICATION DE CODE PAR LA MÉTHODE DES SOLUTIONS MANUFACTURÉES
+DEVOIR 2 : VÃ‰RIFICATION DE CODE PAR LA MÃ‰THODE DES SOLUTIONS MANUFACTURÃ‰ES
 
-PAR : Hugo Trépanier, Jean Zhu & Renno Soussa
+PAR : Hugo TrÃ©panier, Jean Zhu & Renno Soussa
 """
 
 """
-Ce code permet de résoudre l'équation de diffusion-réaction transitoire impliquée dans le problème de diffusion du sel minéral dissout dans l'eau
-à travers un pilier de béton en contact avec l'eau saline.
+Ce code permet de rÃ©soudre l'Ã©quation de diffusion-rÃ©action transitoire impliquÃ©e dans le problÃ¨me de diffusion du sel minÃ©ral dissout dans l'eau
+Ã  travers un pilier de bÃ©ton en contact avec l'eau saline.
 
-L'objectif est d'obtenir le profil de concentration en coordonnées cylindrique selon la position dans le rayon du pilier de béton, et ce, pour 
-plusieurs pas de temps. Cela permet alors de caractériser l'évolution temporelle du transfert de masse dans le pilier.
+L'objectif est d'obtenir le profil de concentration en coordonnÃ©es cylindrique selon la position dans le rayon du pilier de bÃ©ton, et ce, pour 
+plusieurs pas de temps. Cela permet alors de caractÃ©riser l'Ã©volution temporelle du transfert de masse dans le pilier.
 
-La résolution spatiale se fait par la méthode des différences finies avec des schémas de différentiation d'ordre 2 pour permettre une résolution exacte
-de l'équation différentielle spatiale, et ce, puisque la solution analytique est un polynôme d'ordre 2.
-La résolution temporelle se fait par la méthode de XXXXXXXXXXXXXXXXXX puisque XXXXXXXXXXXXXXXXXXX
+La rÃ©solution spatiale se fait par la mÃ©thode des diffÃ©rences finies avec des schÃ©mas de diffÃ©rentiation d'ordre 2 pour permettre une rÃ©solution exacte
+de l'Ã©quation diffÃ©rentielle spatiale, et ce, puisque la solution analytique est un polynÃ´me d'ordre 2.
+La rÃ©solution temporelle se fait par la mÃ©thode de XXXXXXXXXXXXXXXXXX puisque XXXXXXXXXXXXXXXXXXX
 
-À la fin de la résoltion, nous nous attendons à obtenir un graphique du profil de concentration selon la position dans le rayon pour à plusieurs temps t.
-Le profil parabolique sera plus prononcé aux premiers pas de temps et et s'aplatira au fil du temps. Une réaction d'ordre 1 consommant le sel dans le pilier
-existe, donc, le profil parabolique ne deviendra probablement pas complètement plat puisqu'un gradient de concentration se maintiendra.
+Ã€ la fin de la rÃ©soltion, nous nous attendons Ã  obtenir un graphique du profil de concentration selon la position dans le rayon pour Ã  plusieurs temps t.
+Le profil parabolique sera plus prononcÃ© aux premiers pas de temps et et s'aplatira au fil du temps. Une rÃ©action d'ordre 1 consommant le sel dans le pilier
+existe, donc, le profil parabolique ne deviendra probablement pas complÃ¨tement plat puisqu'un gradient de concentration se maintiendra.
 
 """
 
@@ -30,17 +31,18 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import copy
 import re
+import sys
 import os
 
 """
-Fontions utilisées dans la résolution de l'équation différentielle
+Fontions utilisÃ©es dans la rÃ©solution de l'Ã©quation diffÃ©rentielle
 """
-# Création de la matrice de discrétisation spatiale de l'e.d.p.
+# CrÃ©ation de la matrice de discrÃ©tisation spatiale de l'e.d.p.
 def make_A_matrix_order2(N, R, dt, k, Deff, Ce):
-    "Génération de la matrice A"
+    "GÃ©nÃ©ration de la matrice A"
     dr = R/(N-1)
     A = np.zeros((N, N))
-            # Condition de Dirichlett à la frontière
+            # Condition de Dirichlett Ã  la frontiÃ¨re
     # A[N-1,N-3:N] = [1, -4, 3]
     A[0,0:3] = [-3, 4, -1]
     A[N-1, N-1] = 1
@@ -53,7 +55,7 @@ def make_A_matrix_order2(N, R, dt, k, Deff, Ce):
     return A
 
 def make_b_vector(N, Deff, Ce):
-    "Génération de la matrice b"
+    "GÃ©nÃ©ration de la matrice b"
     b = np.zeros(N)
     
     return b
@@ -72,7 +74,7 @@ def compute_M_st(r, t, Deff, k, R, Ce):
 
 def verification(N, R, dt, t_vector, k, Deff, Ce) :
     
-    # Discrétisation dans l'espace
+    # DiscrÃ©tisation dans l'espace
     r_vector = np.linspace(0, R, N)
     dr = R/(N-1)
     
@@ -94,7 +96,7 @@ def verification(N, R, dt, t_vector, k, Deff, Ce) :
 
 def resolution(N, R, dt, t_vector, k, Deff, Ce) :
     
-    # Discrétisation dans l'espace
+    # DiscrÃ©tisation dans l'espace
     r_vector = np.linspace(0, R, N)
     dr = R/(N-1)
     
@@ -117,14 +119,14 @@ def resolution(N, R, dt, t_vector, k, Deff, Ce) :
 
 def plot_vs_rt(r_vector, t_vector, C_matrix, title, output_name) :
     """
-    G�n�ration, affichage et sauvegarde des graphiques des r�sultats
+    Génération, affichage et sauvegarde des graphiques des résultats
     
-    Param�tres
+    Paramètres
     ----------
-    r_vetor (array) : Vecteur des points de discr�tisation dans l'espace
-    t_vector (array) : Vecteur des points de discr�tisation dans le temps
-    C_matrix (array (len(t_vector), len(r_vector))) : Matrice des r�sultats
-    title (string) : Titre du graphique � afficher
+    r_vetor (array) : Vecteur des points de discrétisation dans l'espace
+    t_vector (array) : Vecteur des points de discrétisation dans le temps
+    C_matrix (array (len(t_vector), len(r_vector))) : Matrice des résultats
+    title (string) : Titre du graphique à afficher
     output_name (string) : Nom du fichier de sauvegarde
 
     Sorties
@@ -158,7 +160,7 @@ def plot_vs_rt(r_vector, t_vector, C_matrix, title, output_name) :
     return None
 
 def calcul_L1_N(N, Ntemps, results_num, results_analytique) :
-    " Calcul de l'erreur L1 pour l'�tude de l'influence de N. L'erreur est calcul� en utilisant la derni�re courbe obtenue."
+    " Calcul de l'erreur L1 pour l'étude de l'influence de N. L'erreur est calculé en utilisant la dernière courbe obtenue."
     results_num_np = np.array(results_num)
     results_analytique_np = np.array(results_analytique)
     L1_N = ((1/N)*np.sum(np.abs(results_num_np[Ntemps-1] - results_analytique_np[Ntemps-1])))
@@ -166,7 +168,7 @@ def calcul_L1_N(N, Ntemps, results_num, results_analytique) :
     return L1_N
 
 def calcul_L1_T(N, Ntemps, results_num, results_analytique) :
-    " Calcul de l'erreur L1 pour l'�tude de l'influence de T. L'erreur est calcul� en utilisant toutes les courbes obtenues � la position centrale."
+    " Calcul de l'erreur L1 pour l'étude de l'influence de T. L'erreur est calculé en utilisant toutes les courbes obtenues à la position centrale."
     results_num_np = np.array(results_num)
     results_analytique_np = np.array(results_analytique)
     L1_N = ((1/Ntemps)*np.sum(np.abs(results_num_np[:,0] - results_analytique_np[:,0])))
@@ -174,7 +176,7 @@ def calcul_L1_T(N, Ntemps, results_num, results_analytique) :
     return L1_N
 
 def calcul_L2_N(N, Ntemps, results_num, results_analytique) :
-    " Calcul de l'erreur L2 pour l'�tude de l'influence de N. L'erreur est calcul� en utilisant la derni�re courbe obtenue."
+    " Calcul de l'erreur L2 pour l'étude de l'influence de N. L'erreur est calculé en utilisant la dernière courbe obtenue."
     results_num_np = np.array(results_num)
     results_analytique_np = np.array(results_analytique)
     L2_N = (np.sqrt((1/N)*np.sum(np.abs(results_num_np[Ntemps-1] - results_analytique_np[Ntemps-1])**2)))
@@ -182,7 +184,7 @@ def calcul_L2_N(N, Ntemps, results_num, results_analytique) :
     return L2_N
 
 def calcul_L2_T(N, Ntemps, results_num, results_analytique) :
-    " Calcul de l'erreur L2 pour l'�tude de l'influence de T. L'erreur est calcul� en utilisant toutes les courbes obtenues � la position centrale."
+    " Calcul de l'erreur L2 pour l'étude de l'influence de T. L'erreur est calculé en utilisant toutes les courbes obtenues à la position centrale."
     results_num_np = np.array(results_num)
     results_analytique_np = np.array(results_analytique)
     L2_T = (np.sqrt((1/Ntemps)*np.sum(np.abs(results_num_np[:,0] - results_analytique_np[:,0])**2)))
@@ -190,7 +192,7 @@ def calcul_L2_T(N, Ntemps, results_num, results_analytique) :
     return L2_T
 
 def calcul_Linf_N(N, Ntemps, results_num, results_analytique) :
-    " Calcul de l'erreur Linf pour l'�tude de l'influence de N. L'erreur est calcul� en utilisant la derni�re courbe obtenue."
+    " Calcul de l'erreur Linf pour l'étude de l'influence de N. L'erreur est calculé en utilisant la dernière courbe obtenue."
     results_num_np = np.array(results_num)
     results_analytique_np = np.array(results_analytique)
     Linf_N = (np.max(abs(results_num_np[Ntemps-1]-results_analytique_np[Ntemps-1])))
@@ -198,7 +200,7 @@ def calcul_Linf_N(N, Ntemps, results_num, results_analytique) :
     return Linf_N
 
 def calcul_Linf_T(N, Ntemps, results_num, results_analytique) :
-    " Calcul de l'erreur Linf pour l'�tude de l'influence de T. L'erreur est calcul� en utilisant toutes les courbes obtenues � la position centrale."
+    " Calcul de l'erreur Linf pour l'étude de l'influence de T. L'erreur est calculé en utilisant toutes les courbes obtenues à la position centrale."
     results_num_np = np.array(results_num)
     results_analytique_np = np.array(results_analytique)
     Linf_T = (np.max(abs(results_num_np[:,0]-results_analytique_np[:,0])))
@@ -208,15 +210,24 @@ def calcul_Linf_T(N, Ntemps, results_num, results_analytique) :
 
 
 
+# Check if the correct number of arguments is provided
+if len(sys.argv) != 2:
+    print("Usage: python Devoir_2.py <path_to_Input_data.txt>")
+    sys.exit(1)
 
-# ----- Entr�e des donn�es -----
-print("Current working directory:", os.getcwd())
+# Get the path to Input_data.txt from the command-line argument
+input_file_path = sys.argv[1]
+
+# Debug: Print the input file path
+print("Reading input file from:", input_file_path)
+
+# ----- Entrée des données -----
 start_delimiter = "START"
 end_delimiter = "END"
 
 data_dict = {}
 
-with open("../data/Input_data.txt", "r") as file:
+with open(input_file_path, "r") as file:
     capture = False
     for line in file:
         line = line.strip()
@@ -227,66 +238,76 @@ with open("../data/Input_data.txt", "r") as file:
             break  # Stop reading when reaching END
 
         if capture:
-            # Match variable assignments (e.g., "k = 4*10**(-9)")
-            match = re.match(r"(\w+)\s*=\s*([\d\*\(\)\-\+\./eE]+)", line)
+            # Match variable assignments (e.g., "k = 4*10**(-9)" or "plot = Affirmative")
+            match = re.match(r"(\w+)\s*=\s*(.+)", line)
             if match:
                 key, value = match.groups()
-                # Evaluate the expression safely
-                try:
-                    data_dict[key] = eval(value)
-                except Exception as e:
-                    print(f"Error parsing {key}: {value} -> {e}")
+                # Evaluate numerical expressions, but treat strings as-is
+                if key == "plot":
+                    data_dict[key] = value.strip('"')  # Remove quotes if present
+                else:
+                    try:
+                        data_dict[key] = eval(value)
+                    except Exception as e:
+                        print(f"Error parsing {key}: {value} -> {e}")
+            else:
+                print(f"Skipping line (no match): {line}")
 
-# Convert to matrix (list of lists for numerical data only)
-matrix = [[data_dict.get("k", 0), data_dict.get("Deff", 0), 
-           data_dict.get("Ce", 0), data_dict.get("N", 0), 
-           data_dict.get("Ntemps", 0)]]
+# Debug: Print the parsed data
+print("Parsed data:", data_dict)
 
-# Param�tres spatiaux      
+# Extract variables
 N = data_dict.get("N")
 R = data_dict.get("R")
 Ce = data_dict.get("Ce")
-r_values = np.linspace(0, R, N)
-
-# Param�tres temporels
 Ntemps = data_dict.get("Ntemps")
 start = data_dict.get("temps_start")
 stop = data_dict.get("temps_stop")
-
-# Param�tres physiques
 k = data_dict.get("k")
 Deff = data_dict.get("Deff")
+plot = data_dict.get("plot")  # Get the plot flag
+
+# Check if N and R are valid
+if N is None or R is None:
+    raise ValueError("N or R is None. Check the input file.")
+
+# Paramï¿½tres spatiaux      
+r_values = np.linspace(0, R, N)
+
+# Paramï¿½tres temporels
 time_vector = np.linspace(start, stop, Ntemps)
 dt = time_vector[1] - time_vector[0]
 
 # Chemin pour la sauvegarde des graphiques
 output_folder = '../results'
 
-# ----- V�rification du code par la m�thode des solutions manufactur�es (MMS) -----
+# ----- Vï¿½rification du code par la mï¿½thode des solutions manufacturï¿½es (MMS) -----
 # Call the verification function
 results_verif_num = verification(N, R, dt, time_vector, k, Deff, Ce)
 
-# Plot the results
-plt1 = plot_vs_rt(r_values, time_vector, results_verif_num, 
-                  "Numerical Solution at Different Time Steps", 'sol_manufacturee_num.png')
-
-# # ----- Solution manufactur�e -----
+# # ----- Solution manufacturï¿½e -----
 # # Plot the manufactured solution
 C_manuf = []
 for t in range(len(time_vector)):
      C_manuf.append(C_MMS(r_values, time_vector[t]))
 
-# Plot the results
-plt_2 = plot_vs_rt(r_values, time_vector, C_manuf, 
-                   "Manufactured Solution $C_{MMS}(r, t)$ for Different Time Steps", 'sol_manufacturee.png')
-
-# # ----- Solution num�rique de l'�nonc� -----
-# # Calcul de la solution du probl�me de l'�nonc�
+# # ----- Solution numï¿½rique de l'ï¿½noncï¿½ -----
+# # Calcul de la solution du problï¿½me de l'ï¿½noncï¿½
 results_pilier_num = resolution(N, R, dt, time_vector, k, Deff, Ce)
 
-# Plot the results
-plt1 = plot_vs_rt(r_values, time_vector, results_pilier_num, 
-                  "Concentration dans le pilier en fonction de la position et du temps", 'sol_pilier_num.png')
+if plot=="Affirmative" :
+  # Plot the results
+  plt1 = plot_vs_rt(r_values, time_vector, results_verif_num, 
+                    "Numerical Solution at Different Time Steps", 'sol_manufacturee_num.png')
+  # Plot the results
+  plt2 = plot_vs_rt(r_values, time_vector, C_manuf, 
+                     "Manufactured Solution $C_{MMS}(r, t)$ for Different Time Steps", 'sol_manufacturee.png')
+  
+  # Plot the results
+  plt1 = plot_vs_rt(r_values, time_vector, results_pilier_num, 
+                    "Concentration dans le pilier en fonction de la position et du temps", 'sol_pilier_num.png')
+
+
 
 L1_N = calcul_L1_N(N, Ntemps, results_verif_num, C_manuf)
 print("L'erreur L1_N pour N =", N, " est :", L1_N)
