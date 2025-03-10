@@ -58,44 +58,60 @@ def reading_files_T(erreurs):
 
     return t_values, error_values
 
-def graph_convergence(maillages, erreurs, type, dimension, unite):
-    coefficients = np.polyfit(np.log(maillages), np.log(erreurs), 1)
-    exponent = coefficients[0]
+def graph_convergence(maillages, L1, L2, L8, dimension, unite, nom):
+    coefficients1 = np.polyfit(np.log(maillages), np.log(L1), 1)
+    exponent1 = coefficients1[0]
+    coefficients2 = np.polyfit(np.log(maillages), np.log(L2), 1)
+    exponent2 = coefficients2[0]
+    coefficients8 = np.polyfit(np.log(maillages), np.log(L8), 1)
+    exponent8 = coefficients8[0]
 
     # Fonction de rÃ©gression en termes de logarithmes
-    fit_function_log = lambda x: exponent * x + coefficients[1]
+    fit_function_log1 = lambda x: exponent1 * x + coefficients1[1]
+    fit_function_log2 = lambda x: exponent2 * x + coefficients2[1]
+    fit_function_log8 = lambda x: exponent8 * x + coefficients8[1]
 
     # Fonction de rÃ©gression en termes originaux
-    fit_function = lambda x: np.exp(fit_function_log(np.log(x)))
+    fit_function1 = lambda x: np.exp(fit_function_log1(np.log(x)))
+    fit_function2 = lambda x: np.exp(fit_function_log2(np.log(x)))
+    fit_function8 = lambda x: np.exp(fit_function_log8(np.log(x)))
 
     # Extrapoler la valeur prÃ©dite pour la derniÃ¨re valeur de h_values
-    extrapolated_value = fit_function(maillages[-1])
+    extrapolated_value1 = fit_function1(maillages[-1])
+    extrapolated_value2 = fit_function2(maillages[-1])
+    extrapolated_value8 = fit_function8(maillages[-1])
 
     # Tracer le graphique en Ã©chelle log-log avec des points et la courbe de rÃ©gression extrapolÃ©e
-    plt.figure(figsize=(8, 6))
-    plt.scatter(maillages, erreurs, marker='o', color='b', label='DonnÃ©es numÃ©riques obtenues')
-    plt.loglog(maillages, fit_function(maillages), linestyle='--', color='r', label='RÃ©gression en loi de puissance')
+    plt.figure(figsize=(6, 6))
+    plt.scatter(maillages, L1, marker='o', color='b', label='Données numériques obtenues pour L1')
+    plt.loglog(maillages, fit_function1(maillages), linestyle='--', color='r', label='Régression en loi de puissance')
+    plt.scatter(maillages, L2, marker='o', color='b', label='Données numériques obtenues pour L2')
+    plt.loglog(maillages, fit_function2(maillages), linestyle='--', color='r', label='Régression en loi de puissance')
+    plt.scatter(maillages, L8, marker='o', color='b', label='Données numériques obtenues pour Linfini')
+    plt.loglog(maillages, fit_function8(maillages), linestyle='--', color='r', label='Régression en loi de puissance')
     
     # Ajouter des Ã©tiquettes et un titre au graphique
-    plt.title('Convergence d\'ordre 1\n de l\'erreur 'f'{type}'  ' en fonction de ' f'{dimension}',
+    plt.title('Normes des erreurs en fonction de ' f'{dimension}',
           fontsize=14, fontweight='bold', y=1.02)  # Le paramÃ¨tre y rÃ¨gle la position verticale du titre
 
-    plt.xlabel('Pas de diffÃ©rentiation 'f'{unite}', fontsize=12)
-    plt.ylabel('Erreur ' f'{type}' '(mol/m^3)', fontsize=12)
+    plt.xlabel('Pas de différentiation 'f'({unite})', fontsize=12)
+    plt.ylabel('Erreur''(mol/m^3)', fontsize=12)
 
-    # Afficher l'Ã©quation de la rÃ©gression en loi de puissance
-    equation_text = f'$L_2 = {np.exp(coefficients[1]):.4f} \\times Î”x^{{{exponent:.4f}}}$'
-    equation_text_obj = plt.text(0.05, 0.05, equation_text, fontsize=12, transform=plt.gca().transAxes, color='k')
-    
-    # DÃ©placer la zone de texte
-    equation_text_obj.set_position((0.5, 0.4))
+    # Afficher les équations sur le graphique (sans boîte et un peu plus haut)
+    equation_text1 = f'$L_1 = {np.exp(coefficients1[1]):.10f} \\times dx^{{{exponent1:.4f}}}$'
+    equation_text2 = f'$L_2 = {np.exp(coefficients2[1]):.10f} \\times dx^{{{exponent2:.4f}}}$'
+    equation_text8 = f'$L_\\infty = {np.exp(coefficients8[1]):.10f} \\times dx^{{{exponent8:.4f}}}$'
+
+    # Positionner les équations près des courbes (un peu plus haut)
+    y_offset = 0.9  # Facteur pour déplacer le texte vers le haut
+    plt.text(maillages[1], L1[1] * y_offset, equation_text1, fontsize=12, color='r')
+    plt.text(maillages[1], L2[1] * y_offset, equation_text2, fontsize=12, color='m')
+    plt.text(maillages[1], L8[1] * y_offset, equation_text8, fontsize=12, color='c')
     
     plt.grid(True)
     plt.show()
 
     return None
-    
-    
     
 
 # Recueil des erreurs
@@ -106,9 +122,15 @@ t_values, L2_T = reading_files_T("erreurs_L2_T")
 h_values, Linf_N = reading_files_N("erreurs_Linf_N")
 t_values, Linf_T = reading_files_T("erreurs_Linf_T")
 
+# Affichage des graphiques de convergence
+plt_L_N = graph_convergence(h_values, L1_N, L2_N, Linf_N, "la taille du maillage spatial", "m", "plt_LN")
+plt_L_T = graph_convergence(t_values, L1_T, L2_T, Linf_T, "la taille du maillage temporel", "s", "plt_LT")
+
+"""
 plt_L1_N = graph_convergence(h_values, L1_N, "L1", "la taille du maillage spatiale", "m")
 plt_L1_T = graph_convergence(t_values, L1_T, "L1", "la taille du maillage temporel", "m")
 plt_L2_N = graph_convergence(h_values, L2_N, "L2", "la taille du maillage spatiale", "m")
 plt_L2_T = graph_convergence(t_values, L2_T, "L2", "la taille du maillage temporel", "m")
 plt_Linf_N = graph_convergence(h_values, Linf_N, "Linf", "la taille du maillage spatiale", "m")
 plt_Linf_T = graph_convergence(t_values, Linf_T, "Linf", "la taille du maillage temporel", "m")
+"""
